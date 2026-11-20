@@ -1,0 +1,6 @@
+{
+  "name": "Kumar Foods",
+  "description": "Flour processing ERP dashboard for Kumar Foods Processing Company featuring real-time Supabase & cloud sync, AI sales forecasting, warehouse stock alerts, and predictive mill maintenance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

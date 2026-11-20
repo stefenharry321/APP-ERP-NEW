@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Kumar Foods</string>
+    <string name="company_full_name">Kumar Foods Processing Company</string>
+    <string name="company_tagline">Next-Gen Flour Milling &amp; Supply Chain ERP</string>
+    <string name="sign_in_with_google">Sign in with Google</string>
+    <string name="sign_out">Sign Out</string>
+    <string name="nav_overview">Home</string>
+    <string name="nav_inventory">Stock</string>
+    <string name="nav_logistics">Fleet</string>
+    <string name="nav_accounts">Khata</string>
+    <string name="nav_ai_mills">AI &amp; Mill</string>
+    <string name="sync_hub_title">Windows ERP &amp; Cloud Sync</string>
+    <string name="notification_channel_name">Critical ERP Alerts</string>
+    <string name="notification_channel_desc">Real-time low-stock threshold alerts and milling equipment predictive maintenance warnings</string>
+</resources>

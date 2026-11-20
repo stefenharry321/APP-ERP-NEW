@@ -1,0 +1,169 @@
+{
+  "entities": {
+    "InventoryItem": {
+      "title": "InventoryItem",
+      "description": "Flour, raw wheat, byproduct, or packaging stock item stored across Kumar Foods warehouses.",
+      "type": "object",
+      "properties": {
+        "sku": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string", "enum": ["FINISHED_ATTA", "RAW_WHEAT", "BYPRODUCT", "PACKAGING"] },
+        "warehouse": { "type": "string" },
+        "quantityMt": { "type": "number" },
+        "capacityMt": { "type": "number" },
+        "lowThresholdMt": { "type": "number" },
+        "unitPriceInr": { "type": "number" },
+        "batchCode": { "type": "string" },
+        "syncSource": { "type": "string", "enum": ["FIREBASE", "SUPABASE_ERP"] },
+        "createdAt": { "type": "string", "format": "date-time", "description": "FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "FieldValue.serverTimestamp()" }
+      },
+      "required": [
+        "sku", "name", "category", "warehouse", "quantityMt", "capacityMt",
+        "lowThresholdMt", "unitPriceInr", "batchCode", "syncSource", "createdAt", "updatedAt"
+      ]
+    },
+    "Shipment": {
+      "title": "Shipment",
+      "description": "Real-time outbound flour shipment dispatch record.",
+      "type": "object",
+      "properties": {
+        "trackingCode": { "type": "string" },
+        "clientName": { "type": "string" },
+        "destination": { "type": "string" },
+        "productName": { "type": "string" },
+        "weightMt": { "type": "number" },
+        "truckNumber": { "type": "string" },
+        "status": { "type": "string", "enum": ["LOADING", "IN_TRANSIT", "OUT_FOR_DELIVERY", "DELIVERED"] },
+        "etaText": { "type": "string" },
+        "warehouseOrigin": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "FieldValue.serverTimestamp()" }
+      },
+      "required": [
+        "trackingCode", "clientName", "destination", "productName", "weightMt",
+        "truckNumber", "status", "etaText", "warehouseOrigin", "createdAt", "updatedAt"
+      ]
+    },
+    "MillEquipment": {
+      "title": "MillEquipment",
+      "description": "Flour milling machine telemetry and predictive maintenance schedule.",
+      "type": "object",
+      "properties": {
+        "machineName": { "type": "string" },
+        "machineType": { "type": "string", "enum": ["ROLLER_MILL", "CHAKKI_STONE", "PLANSIFTER", "PACKAGING_LINE", "SILO_CONVEYOR"] },
+        "zone": { "type": "string" },
+        "healthScore": { "type": "integer" },
+        "temperatureC": { "type": "number" },
+        "vibrationMmS": { "type": "number" },
+        "runningHours": { "type": "number" },
+        "outputRateMtHr": { "type": "number" },
+        "status": { "type": "string", "enum": ["OPTIMAL", "WARNING", "CRITICAL", "MAINTENANCE"] },
+        "nextServiceDate": { "type": "string" },
+        "lastAiAdvice": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "FieldValue.serverTimestamp()" }
+      },
+      "required": [
+        "machineName", "machineType", "zone", "healthScore", "temperatureC", "vibrationMmS",
+        "runningHours", "outputRateMtHr", "status", "nextServiceDate", "createdAt", "updatedAt"
+      ]
+    },
+    "AiAnalyticsReport": {
+      "title": "AiAnalyticsReport",
+      "description": "AI-generated sales trend forecast, supply chain report, or maintenance audit.",
+      "type": "object",
+      "properties": {
+        "reportType": { "type": "string", "enum": ["SALES_FORECAST", "SUPPLY_CHAIN_REPORT", "MAINTENANCE_AUDIT"] },
+        "title": { "type": "string" },
+        "summary": { "type": "string" },
+        "predictedGrowthPct": { "type": "number" },
+        "recommendedRestockMt": { "type": "number" },
+        "forecastLabels": { "type": "array" },
+        "forecastValues": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "FieldValue.serverTimestamp()" }
+      },
+      "required": [
+        "reportType", "title", "summary", "predictedGrowthPct", "recommendedRestockMt",
+        "forecastLabels", "forecastValues", "createdAt", "updatedAt"
+      ]
+    },
+    "GstInvoice": {
+      "title": "GstInvoice",
+      "description": "GST tax invoice for Kumar Foods atta and wheat product sales synced with Windows ERP.",
+      "type": "object",
+      "properties": {
+        "invoiceNumber": { "type": "string" },
+        "partyName": { "type": "string" },
+        "partyGstin": { "type": "string" },
+        "hsnCode": { "type": "string" },
+        "itemDescription": { "type": "string" },
+        "quantityMt": { "type": "number" },
+        "taxableAmountInr": { "type": "number" },
+        "gstRatePct": { "type": "number" },
+        "cgstInr": { "type": "number" },
+        "sgstInr": { "type": "number" },
+        "totalAmountInr": { "type": "number" },
+        "paymentStatus": { "type": "string", "enum": ["UNPAID", "PARTIAL", "PAID"] },
+        "invoiceDate": { "type": "string" },
+        "syncSource": { "type": "string", "enum": ["FIREBASE", "SUPABASE_ERP"] },
+        "createdAt": { "type": "string", "format": "date-time", "description": "FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "FieldValue.serverTimestamp()" }
+      },
+      "required": [
+        "invoiceNumber", "partyName", "partyGstin", "hsnCode", "itemDescription",
+        "quantityMt", "taxableAmountInr", "gstRatePct", "cgstInr", "sgstInr",
+        "totalAmountInr", "paymentStatus", "invoiceDate", "syncSource", "createdAt", "updatedAt"
+      ]
+    },
+    "PartyLedgerEntry": {
+      "title": "PartyLedgerEntry",
+      "description": "Distributor and buyer khata ledger transaction (Debit Sale or Credit Payment).",
+      "type": "object",
+      "properties": {
+        "partyName": { "type": "string" },
+        "partyPhone": { "type": "string" },
+        "partyCity": { "type": "string" },
+        "entryType": { "type": "string", "enum": ["DEBIT_SALE", "CREDIT_PAYMENT"] },
+        "amountInr": { "type": "number" },
+        "referenceNo": { "type": "string" },
+        "notes": { "type": "string" },
+        "entryDate": { "type": "string" },
+        "syncSource": { "type": "string", "enum": ["FIREBASE", "SUPABASE_ERP"] },
+        "createdAt": { "type": "string", "format": "date-time", "description": "FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "FieldValue.serverTimestamp()" }
+      },
+      "required": [
+        "partyName", "partyPhone", "partyCity", "entryType", "amountInr",
+        "referenceNo", "notes", "entryDate", "syncSource", "createdAt", "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/inventory/{itemId}": {
+      "schema": { "$ref": "#/entities/InventoryItem" },
+      "description": "Per-user real-time flour and raw wheat inventory items across warehouses."
+    },
+    "/users/{userId}/shipments/{shipmentId}": {
+      "schema": { "$ref": "#/entities/Shipment" },
+      "description": "Per-user live flour shipment dispatches and delivery statuses."
+    },
+    "/users/{userId}/mills/{millId}": {
+      "schema": { "$ref": "#/entities/MillEquipment" },
+      "description": "Per-user milling machinery telemetry and predictive maintenance schedules."
+    },
+    "/users/{userId}/ai_reports/{reportId}": {
+      "schema": { "$ref": "#/entities/AiAnalyticsReport" },
+      "description": "Per-user AI sales forecasts and automated supply chain analytics reports."
+    },
+    "/users/{userId}/gst_invoices/{invoiceId}": {
+      "schema": { "$ref": "#/entities/GstInvoice" },
+      "description": "Per-user GST billing invoices synced with Windows ERP."
+    },
+    "/users/{userId}/party_ledger/{entryId}": {
+      "schema": { "$ref": "#/entities/PartyLedgerEntry" },
+      "description": "Per-user distributor party khata ledger entries synced with Windows ERP."
+    }
+  }
+}

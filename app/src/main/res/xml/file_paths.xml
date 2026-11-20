@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <cache-path name="erp_pdfs" path="erp_pdfs/" />
+    <files-path name="erp_docs" path="erp_docs/" />
+</paths>

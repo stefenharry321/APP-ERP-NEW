@@ -1,0 +1,342 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pillar 1: Global Default-Deny Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- GLOBAL HARDENED PRIMITIVES ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidTimestamp(ts) {
+      return ts is timestamp && ts <= request.time;
+    }
+
+    // --- ENTITY VALIDATION BLUEPRINTS (ANTI-UPDATE-GAP) ---
+
+    function isValidInventoryItem(data) {
+      return data.sku is string && data.sku.size() >= 1 && data.sku.size() <= 40 &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+             data.category is string && data.category in ['FINISHED_ATTA', 'RAW_WHEAT', 'BYPRODUCT', 'PACKAGING'] &&
+             data.warehouse is string && data.warehouse.size() >= 1 && data.warehouse.size() <= 80 &&
+             data.quantityMt is number && data.quantityMt >= 0 && data.quantityMt <= 100000 &&
+             data.capacityMt is number && data.capacityMt >= 1 && data.capacityMt <= 100000 &&
+             data.lowThresholdMt is number && data.lowThresholdMt >= 0 && data.lowThresholdMt <= 100000 &&
+             data.unitPriceInr is number && data.unitPriceInr >= 0 && data.unitPriceInr <= 1000000 &&
+             data.batchCode is string && data.batchCode.size() >= 1 && data.batchCode.size() <= 50 &&
+             data.syncSource is string && data.syncSource in ['FIREBASE', 'SUPABASE_ERP'] &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidShipment(data) {
+      return data.trackingCode is string && data.trackingCode.size() >= 1 && data.trackingCode.size() <= 40 &&
+             data.clientName is string && data.clientName.size() >= 1 && data.clientName.size() <= 100 &&
+             data.destination is string && data.destination.size() >= 1 && data.destination.size() <= 100 &&
+             data.productName is string && data.productName.size() >= 1 && data.productName.size() <= 100 &&
+             data.weightMt is number && data.weightMt > 0 && data.weightMt <= 10000 &&
+             data.truckNumber is string && data.truckNumber.size() >= 1 && data.truckNumber.size() <= 30 &&
+             data.status is string && data.status in ['LOADING', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED'] &&
+             data.etaText is string && data.etaText.size() >= 1 && data.etaText.size() <= 60 &&
+             data.warehouseOrigin is string && data.warehouseOrigin.size() >= 1 && data.warehouseOrigin.size() <= 80 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidMillEquipment(data) {
+      return data.machineName is string && data.machineName.size() >= 1 && data.machineName.size() <= 100 &&
+             data.machineType is string && data.machineType in ['ROLLER_MILL', 'CHAKKI_STONE', 'PLANSIFTER', 'PACKAGING_LINE', 'SILO_CONVEYOR'] &&
+             data.zone is string && data.zone.size() >= 1 && data.zone.size() <= 60 &&
+             data.healthScore is int && data.healthScore >= 0 && data.healthScore <= 100 &&
+             data.temperatureC is number && data.temperatureC >= 0 && data.temperatureC <= 250 &&
+             data.vibrationMmS is number && data.vibrationMmS >= 0 && data.vibrationMmS <= 100 &&
+             data.runningHours is number && data.runningHours >= 0 && data.runningHours <= 500000 &&
+             data.outputRateMtHr is number && data.outputRateMtHr >= 0 && data.outputRateMtHr <= 500 &&
+             data.status is string && data.status in ['OPTIMAL', 'WARNING', 'CRITICAL', 'MAINTENANCE'] &&
+             data.nextServiceDate is string && data.nextServiceDate.size() >= 1 && data.nextServiceDate.size() <= 40 &&
+             (!('lastAiAdvice' in data) || (data.lastAiAdvice is string && data.lastAiAdvice.size() <= 600)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidAiReport(data) {
+      return data.reportType is string && data.reportType in ['SALES_FORECAST', 'SUPPLY_CHAIN_REPORT', 'MAINTENANCE_AUDIT'] &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.summary is string && data.summary.size() >= 1 && data.summary.size() <= 4000 &&
+             data.predictedGrowthPct is number && data.predictedGrowthPct >= -100 && data.predictedGrowthPct <= 500 &&
+             data.recommendedRestockMt is number && data.recommendedRestockMt >= 0 && data.recommendedRestockMt <= 100000 &&
+             data.forecastLabels is list && data.forecastLabels.size() <= 14 &&
+             (data.forecastLabels.size() == 0 || data.forecastLabels[0] is string) &&
+             data.forecastValues is list && data.forecastValues.size() <= 14 &&
+             (data.forecastValues.size() == 0 || data.forecastValues[0] is number) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidGstInvoice(data) {
+      return data.invoiceNumber is string && data.invoiceNumber.size() >= 1 && data.invoiceNumber.size() <= 40 &&
+             data.partyName is string && data.partyName.size() >= 1 && data.partyName.size() <= 100 &&
+             data.partyGstin is string && data.partyGstin.size() <= 20 &&
+             data.hsnCode is string && data.hsnCode.size() >= 1 && data.hsnCode.size() <= 16 &&
+             data.itemDescription is string && data.itemDescription.size() >= 1 && data.itemDescription.size() <= 120 &&
+             data.quantityMt is number && data.quantityMt > 0 && data.quantityMt <= 10000 &&
+             data.taxableAmountInr is number && data.taxableAmountInr >= 0 && data.taxableAmountInr <= 100000000 &&
+             data.gstRatePct is number && data.gstRatePct >= 0 && data.gstRatePct <= 28 &&
+             data.cgstInr is number && data.cgstInr >= 0 && data.cgstInr <= 50000000 &&
+             data.sgstInr is number && data.sgstInr >= 0 && data.sgstInr <= 50000000 &&
+             data.totalAmountInr is number && data.totalAmountInr >= 0 && data.totalAmountInr <= 150000000 &&
+             data.paymentStatus is string && data.paymentStatus in ['UNPAID', 'PARTIAL', 'PAID'] &&
+             data.invoiceDate is string && data.invoiceDate.size() >= 1 && data.invoiceDate.size() <= 30 &&
+             data.syncSource is string && data.syncSource in ['FIREBASE', 'SUPABASE_ERP'] &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidPartyLedgerEntry(data) {
+      return data.partyName is string && data.partyName.size() >= 1 && data.partyName.size() <= 100 &&
+             data.partyPhone is string && data.partyPhone.size() <= 25 &&
+             data.partyCity is string && data.partyCity.size() >= 1 && data.partyCity.size() <= 80 &&
+             data.entryType is string && data.entryType in ['DEBIT_SALE', 'CREDIT_PAYMENT'] &&
+             data.amountInr is number && data.amountInr > 0 && data.amountInr <= 100000000 &&
+             data.referenceNo is string && data.referenceNo.size() >= 1 && data.referenceNo.size() <= 50 &&
+             data.notes is string && data.notes.size() <= 300 &&
+             data.entryDate is string && data.entryDate.size() >= 1 && data.entryDate.size() <= 30 &&
+             data.syncSource is string && data.syncSource in ['FIREBASE', 'SUPABASE_ERP'] &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    // --- USER-SCOPED ERP COLLECTIONS ---
+
+    match /users/{userId}/inventory/{itemId} {
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId) && isValidId(itemId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(itemId) &&
+                       incoming().keys().hasAll([
+                         'sku', 'name', 'category', 'warehouse',
+                         'quantityMt', 'capacityMt', 'lowThresholdMt',
+                         'unitPriceInr', 'batchCode', 'syncSource',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'sku', 'name', 'category', 'warehouse',
+                         'quantityMt', 'capacityMt', 'lowThresholdMt',
+                         'unitPriceInr', 'batchCode', 'syncSource',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidInventoryItem(incoming());
+
+      allow update: if isOwner(userId) &&
+                       isValidId(itemId) &&
+                       isValidInventoryItem(incoming()) &&
+                       incoming().createdAt == existing().createdAt &&
+                       (
+                         incoming().diff(existing()).affectedKeys().hasOnly(['quantityMt', 'lowThresholdMt', 'syncSource', 'updatedAt']) ||
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'sku', 'name', 'category', 'warehouse',
+                           'quantityMt', 'capacityMt', 'lowThresholdMt',
+                           'unitPriceInr', 'batchCode', 'syncSource', 'updatedAt'
+                         ])
+                       );
+
+      allow delete: if isOwner(userId) && isValidId(itemId);
+    }
+
+    match /users/{userId}/shipments/{shipmentId} {
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId) && isValidId(shipmentId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(shipmentId) &&
+                       incoming().keys().hasAll([
+                         'trackingCode', 'clientName', 'destination', 'productName',
+                         'weightMt', 'truckNumber', 'status', 'etaText',
+                         'warehouseOrigin', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'trackingCode', 'clientName', 'destination', 'productName',
+                         'weightMt', 'truckNumber', 'status', 'etaText',
+                         'warehouseOrigin', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidShipment(incoming());
+
+      allow update: if isOwner(userId) &&
+                       isValidId(shipmentId) &&
+                       isValidShipment(incoming()) &&
+                       incoming().createdAt == existing().createdAt &&
+                       existing().status != 'DELIVERED' &&
+                       (
+                         incoming().diff(existing()).affectedKeys().hasOnly(['status', 'etaText', 'updatedAt']) ||
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'clientName', 'destination', 'productName',
+                           'weightMt', 'truckNumber', 'status', 'etaText',
+                           'warehouseOrigin', 'updatedAt'
+                         ])
+                       );
+
+      allow delete: if isOwner(userId) && isValidId(shipmentId);
+    }
+
+    match /users/{userId}/mills/{millId} {
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId) && isValidId(millId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(millId) &&
+                       incoming().keys().hasAll([
+                         'machineName', 'machineType', 'zone', 'healthScore',
+                         'temperatureC', 'vibrationMmS', 'runningHours',
+                         'outputRateMtHr', 'status', 'nextServiceDate',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'machineName', 'machineType', 'zone', 'healthScore',
+                         'temperatureC', 'vibrationMmS', 'runningHours',
+                         'outputRateMtHr', 'status', 'nextServiceDate',
+                         'lastAiAdvice', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidMillEquipment(incoming());
+
+      allow update: if isOwner(userId) &&
+                       isValidId(millId) &&
+                       isValidMillEquipment(incoming()) &&
+                       incoming().createdAt == existing().createdAt &&
+                       (
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'status', 'nextServiceDate', 'healthScore', 'lastAiAdvice', 'updatedAt'
+                         ]) ||
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'healthScore', 'temperatureC', 'vibrationMmS',
+                           'runningHours', 'outputRateMtHr', 'status',
+                           'nextServiceDate', 'lastAiAdvice', 'updatedAt'
+                         ])
+                       );
+
+      allow delete: if isOwner(userId) && isValidId(millId);
+    }
+
+    match /users/{userId}/ai_reports/{reportId} {
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId) && isValidId(reportId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(reportId) &&
+                       incoming().keys().hasAll([
+                         'reportType', 'title', 'summary', 'predictedGrowthPct',
+                         'recommendedRestockMt', 'forecastLabels', 'forecastValues',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'reportType', 'title', 'summary', 'predictedGrowthPct',
+                         'recommendedRestockMt', 'forecastLabels', 'forecastValues',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidAiReport(incoming());
+
+      allow update: if isOwner(userId) &&
+                       isValidId(reportId) &&
+                       isValidAiReport(incoming()) &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'title', 'summary', 'predictedGrowthPct',
+                         'recommendedRestockMt', 'forecastLabels', 'forecastValues',
+                         'updatedAt'
+                       ]);
+
+      allow delete: if isOwner(userId) && isValidId(reportId);
+    }
+
+    match /users/{userId}/gst_invoices/{invoiceId} {
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId) && isValidId(invoiceId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(invoiceId) &&
+                       incoming().keys().hasAll([
+                         'invoiceNumber', 'partyName', 'partyGstin', 'hsnCode',
+                         'itemDescription', 'quantityMt', 'taxableAmountInr',
+                         'gstRatePct', 'cgstInr', 'sgstInr', 'totalAmountInr',
+                         'paymentStatus', 'invoiceDate', 'syncSource',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'invoiceNumber', 'partyName', 'partyGstin', 'hsnCode',
+                         'itemDescription', 'quantityMt', 'taxableAmountInr',
+                         'gstRatePct', 'cgstInr', 'sgstInr', 'totalAmountInr',
+                         'paymentStatus', 'invoiceDate', 'syncSource',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidGstInvoice(incoming());
+
+      allow update: if isOwner(userId) &&
+                       isValidId(invoiceId) &&
+                       isValidGstInvoice(incoming()) &&
+                       incoming().createdAt == existing().createdAt &&
+                       // Terminal State Lock: Paid GST invoices cannot be altered
+                       existing().paymentStatus != 'PAID' &&
+                       (
+                         incoming().diff(existing()).affectedKeys().hasOnly(['paymentStatus', 'syncSource', 'updatedAt']) ||
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'partyName', 'partyGstin', 'hsnCode', 'itemDescription',
+                           'quantityMt', 'taxableAmountInr', 'gstRatePct',
+                           'cgstInr', 'sgstInr', 'totalAmountInr',
+                           'paymentStatus', 'invoiceDate', 'syncSource', 'updatedAt'
+                         ])
+                       );
+
+      allow delete: if isOwner(userId) && isValidId(invoiceId);
+    }
+
+    match /users/{userId}/party_ledger/{entryId} {
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId) && isValidId(entryId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(entryId) &&
+                       incoming().keys().hasAll([
+                         'partyName', 'partyPhone', 'partyCity', 'entryType',
+                         'amountInr', 'referenceNo', 'notes', 'entryDate',
+                         'syncSource', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'partyName', 'partyPhone', 'partyCity', 'entryType',
+                         'amountInr', 'referenceNo', 'notes', 'entryDate',
+                         'syncSource', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidPartyLedgerEntry(incoming());
+
+      allow update: if isOwner(userId) &&
+                       isValidId(entryId) &&
+                       isValidPartyLedgerEntry(incoming()) &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'partyName', 'partyPhone', 'partyCity', 'entryType',
+                         'amountInr', 'referenceNo', 'notes', 'entryDate',
+                         'syncSource', 'updatedAt'
+                       ]);
+
+      allow delete: if isOwner(userId) && isValidId(entryId);
+    }
+  }
+}
